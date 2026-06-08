@@ -362,7 +362,8 @@ function drawList(data){
 // ログイン
 function login(){
 
-  alert("ログインボタンが押されました");
+
+  alert("ログイン関数開始");
 
   const id =
     document.getElementById("id").value;
@@ -370,7 +371,11 @@ function login(){
   const pass =
     document.getElementById("pass").value;
 
+  alert("ID=" + id + " PASS=" + pass);
+
   if(id==="narano1" && pass==="4528"){
+
+    alert("一致しました");
 
     document.getElementById("loginArea")
       .style.display="none";
