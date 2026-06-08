@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>奈良県珠算協会</title>
+
+<style>
+body{
+  font-family:sans-serif;
+  margin:0;
+  background:#f5f5f5;
+}
+
+header,footer{
+  background:#2c3e50;
+  color:#fff;
+  text-align:center;
+  padding:15px;
+}
+
+nav{
+  background:#34495e;
+  text-align:center;
+  padding:10px;
+}
+
+nav a{
+  color:#fff;
+  margin:0 10px;
+  text-decoration:none;
+}
+
+.container{
+  padding:20px;
+}
+
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:10px;
+  margin-bottom:20px;
+}
+
+.school{
+  border-bottom:1px solid #ddd;
+  padding:15px 0;
+}
+
+.btn{
+  display:inline-block;
+  padding:8px 12px;
+  background:#e67e22;
+  color:#fff;
+  border-radius:5px;
+  text-decoration:none;
+  margin:5px 5px 0 0;
+  border:none;
+  cursor:pointer;
+}
+
+.badge{
+  display:inline-block;
+  padding:3px 8px;
+  background:red;
+  color:#fff;
+  border-radius:5px;
+  font-size:12px;
+  margin-left:5px;
+}
+
+input,textarea,select{
+  padding:8px;
+  margin:5px 0;
+  width:100%;
+  max-width:400px;
+  box-sizing:border-box;
+}
+</style>
+
+</head>
+
+<body>
+
+<header>
+<h1>奈良県珠算協会</h1>
+<p>近くの教室がすぐ見つかる・すぐ問い合わせできる</p>
+</header>
+
+<nav>
+<a href="#search">教室検索</a>
+<a href="#contact">お問い合わせ</a>
+</nav>
+
+<div class="container">
+
+<!-- 会員ページ -->
+<div class="card">
+
+<h2>協会員専用ページ</h2>
+
+<div id="loginArea">
+
+<input id="id" placeholder="ID">
+
+<input id="pass" type="password" placeholder="パスワード">
+
+<button class="btn" onclick="login()">ログイン</button>
+
+</div>
+
+<div id="memberPage" style="display:none;">
+
+<h3>奈良県珠算協会 会員ページ</h3>
+
+<p>必要資料・理事会情報を掲載しています。</p>
+
+<a class="btn" href="teikan.pdf" target="_blank">
+定款を見る
+</a>
+
+<a class="btn" href="rijikai.pdf" target="_blank">
+理事会資料
+</a>
+
+<br><br>
+
+<h4>理事会動画</h4>
+
+<video width="100%" controls>
+<source src="rijikai.mp4" type="video/mp4">
+</video>
+
+</div>
+
+</div>
+
+<!-- 教室検索 -->
+<div class="card" id="search">
+
+<h2>教室検索</h2>
+
+<select id="cityFilter" onchange="searchLocation()">
+<option value="">市町村で絞り込み</option>
+</select>
+
+<button class="btn" onclick="searchLocation()">
+現在地から検索
+</button>
+
+<div id="list"></div>
+
+</div>
+
+<!-- お問い合わせ -->
+<div class="card" id="contact">
+
+<h2>協会へのお問い合わせ</h2>
+
+<form>
+
+<input placeholder="お名前">
+
+<input placeholder="メール">
+
+<textarea placeholder="お問い合わせ内容"></textarea>
+
+<button class="btn" type="button">
+送信
+</button>
+
+</form>
+
+</div>
+
+</div>
+
+<footer>
+© 奈良県珠算協会
+</footer>
+
+<script>
+
+let schools = [];
+
+// GoogleスプレッドシートCSV
+const SHEET_URL =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vQTDACkU5uRg0_p78Bw4X7d_oFoCgyD5o1oY53nVhcKKMAkcdtrT_UoeK5AQUfkxkDsP_xjlUBJYf71/pub?output=csv";
+
+// CSV取得
+fetch(SHEET_URL)
+.then(res => res.text())
+.then(data => {
+
+  const rows = data.split("\n").slice(1);
+
+  schools = rows.map(r => {
+
+    const clean = r.replace("\r","").trim();
+
+    if(!clean) return null;
+
+    const [name, city, lat, lon, tel, line, desc]
+      = clean.split(",").map(v => v.trim());
+
+    return {
+      name,
+      city,
+      lat:parseFloat(lat),
+      lon:parseFloat(lon),
+      tel,
+      line,
+      desc,
+      dist:0
+    };
+
+  }).filter(s => s && s.name);
+
+  initCityFilter();
+
+  // 初期表示
+  drawList(schools);
+
+});
+
+// 市町村リスト
+function initCityFilter(){
+
+  const cities =
+    [...new Set(schools.map(s => s.city).filter(c => c))];
+
+  const select =
+    document.getElementById("cityFilter");
+
+  cities.forEach(c => {
+
+    const op=document.createElement("option");
+
+    op.value=c;
+    op.textContent=c;
+
+    select.appendChild(op);
+
+  });
+
+}
+
+// 距離計算
+function getDist(a,b,c,d){
+
+  const R=6371;
+
+  const dLat=(c-a)*Math.PI/180;
+  const dLon=(d-b)*Math.PI/180;
+
+  const x=
+    Math.sin(dLat/2)**2 +
+    Math.cos(a*Math.PI/180) *
+    Math.cos(c*Math.PI/180) *
+    Math.sin(dLon/2)**2;
+
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+
+}
+
+// 検索
+function searchLocation(){
+
+  const city =
+    document.getElementById("cityFilter").value;
+
+  navigator.geolocation.getCurrentPosition(pos => {
+
+    const lat=pos.coords.latitude;
+    const lon=pos.coords.longitude;
+
+    let filtered =
+      city
+      ? schools.filter(s => s.city===city)
+      : schools;
+
+    filtered.forEach(s => {
+
+      s.dist=getDist(lat,lon,s.lat,s.lon);
+
+    });
+
+    filtered.sort((a,b)=>a.dist-b.dist);
+
+    drawList(filtered);
+
+  }, () => {
+
+    // 位置情報拒否時
+    let filtered =
+      city
+      ? schools.filter(s => s.city===city)
+      : schools;
+
+    drawList(filtered);
+
+  });
+
+}
+
+// 一覧表示
+function drawList(data){
+
+  const div=document.getElementById("list");
+
+  div.innerHTML="";
+
+  if(data.length===0){
+
+    div.innerHTML="該当する教室がありません";
+
+    return;
+
+  }
+
+  data.forEach((s,i)=>{
+
+    const d=document.createElement("div");
+
+    d.className="school";
+
+    d.innerHTML=`
+
+      <b>${s.name}</b>
+      <span class="badge">体験受付中</span>
+      <br>
+
+      ${s.city}
+      ${s.dist ? "・約"+s.dist.toFixed(2)+"km" : ""}
+      <br>
+
+      ${s.desc || ""}
+      <br>
+
+      <a class="btn" href="tel:${s.tel}">
+      電話
+      </a>
+
+      <a class="btn" href="${s.line}" target="_blank">
+      ${s.line.includes("lin.ee") ? "LINE" : "HP"}
+      </a>
+
+      <a class="btn"
+      href="https://www.google.com/maps?q=${s.lat},${s.lon}"
+      target="_blank">
+      地図
+      </a>
+
+    `;
+
+    div.appendChild(d);
+
+  });
+
+}
+
+// ログイン
+function login(){
+
+  const id =
+    document.getElementById("id").value;
+
+  const pass =
+    document.getElementById("pass").value;
+
+  if(id==="narano1" && pass==="4528"){
+
+    document.getElementById("loginArea")
+      .style.display="none";
+
+    document.getElementById("memberPage")
+      .style.display="block";
+
+  }else{
+
+    alert("IDまたはパスワードが違います");
+
+  }
+
+}
+
+</script>
+
+</body>
+</html>
