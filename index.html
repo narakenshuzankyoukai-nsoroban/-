@@ -371,13 +371,9 @@ function login(){
   const pass =
     document.getElementById("pass").value;
 
-  alert("ID=" + id + " PASS=" + pass);
+    if(id==="narano1" && pass==="4528"){
 
-  if(id==="narano1" && pass==="4528"){
-
-    alert("一致しました");
-
-    document.getElementById("loginArea")
+        document.getElementById("loginArea")
       .style.display="none";
 
     document.getElementById("memberPage")
