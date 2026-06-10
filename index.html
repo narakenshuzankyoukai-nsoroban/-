@@ -94,6 +94,24 @@ input,textarea,select{
 
 <div class="container">
 
+<!-- お知らせ -->
+<div class="card">
+<h2>お知らせ</h2>
+<div id="newsList">読込中...</div>
+</div>
+
+<!-- 検定情報 -->
+<div class="card">
+<h2>検定情報</h2>
+<div id="examList">読込中...</div>
+</div>
+
+<!-- 大会情報 -->
+<div class="card">
+<h2>大会情報</h2>
+<div id="eventList">読込中...</div>
+</div>
+
 <!-- 会員ページ -->
 <div class="card">
 
@@ -186,7 +204,15 @@ let schools = [];
 // GoogleスプレッドシートCSV
 const SHEET_URL =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTDACkU5uRg0_p78Bw4X7d_oFoCgyD5o1oY53nVhcKKMAkcdtrT_UoeK5AQUfkxkDsP_xjlUBJYf71/pub?output=csv";
+const NEWS_URL =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vSVMAg32Wpt0MS35O_bqLE--E8lhbfY4GkxCIjCRXxfPo7onmCTUNWm-6_Yg1Udl1ImtQJbUaEylrRw/pub?output=csv";
+"お知らせCSVのURL";
 
+const EXAM_URL =
+"検定情報CSVのURL";
+
+const EVENT_URL =
+"大会情報CSVのURL";
 // CSV取得
 fetch(SHEET_URL)
 .then(res => res.text())
@@ -362,7 +388,36 @@ target="_blank">
   });
 
 }
+function loadNews(url,target){
 
+fetch(url)
+.then(res=>res.text())
+.then(data=>{
+
+const rows=data.split("\n").slice(1);
+
+let html="";
+
+rows.reverse().forEach(r=>{
+
+const cols=r.replace("\r","").split(",");
+
+if(cols.length<2)return;
+
+html+=`
+<div style="border-bottom:1px solid #ddd;padding:10px 0;">
+<b>${cols[0]}</b><br>
+${cols[1]}
+</div>
+`;
+
+});
+
+document.getElementById(target).innerHTML=html;
+
+});
+
+}
 // ログイン
 function login(){
 
@@ -390,6 +445,9 @@ function login(){
   }
 
 }
+loadNews(NEWS_URL,"newsList");
+loadNews(EXAM_URL,"examList");
+loadNews(EVENT_URL,"eventList");
 </script>
 
 </body>
