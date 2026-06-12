@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://narakenshuzankyoukai-nsoroban.github.io/-/sitemap.xml
